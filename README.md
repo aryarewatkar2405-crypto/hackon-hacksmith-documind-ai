@@ -52,6 +52,9 @@ From project root:
 .\start_backend.ps1
 ```
 
+This uses a backend watchdog that auto-restarts the server if it crashes.
+Logs are written in `backend/logs/`.
+
 ### One-click start (frontend + backend)
 
 Double-click this file from project root:
@@ -73,6 +76,8 @@ From project root:
 ```powershell
 .\stop_backend.ps1
 ```
+
+Avoid using `--reload` in this environment because it can stop unexpectedly.
 
 ### Alternative (inside backend folder)
 

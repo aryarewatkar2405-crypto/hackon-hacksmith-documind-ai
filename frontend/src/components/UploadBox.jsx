@@ -9,13 +9,24 @@ function UploadBox({ onUploadSuccess }) {
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState('')
 
+  const isAllowedFile = (file) => {
+    if (!file) {
+      return false
+    }
+
+    const fileName = file.name.toLowerCase()
+    const isImage = file.type.startsWith('image/')
+    const isPdf = file.type === 'application/pdf' || fileName.endsWith('.pdf')
+    return isImage || isPdf
+  }
+
   const handleFileSelect = (file) => {
     if (!file) {
       return
     }
 
-    if (!file.type.startsWith('image/')) {
-      setError('Please select an image file.')
+    if (!isAllowedFile(file)) {
+      setError('Please select a JPG, JPEG, PNG, or PDF file.')
       return
     }
 
@@ -52,12 +63,17 @@ function UploadBox({ onUploadSuccess }) {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
+        timeout: 25000,
       })
 
-      await onUploadSuccess(response.data)
+      onUploadSuccess(response.data)
       setSelectedFile(null)
-    } catch {
-      setError('Upload failed. Please check backend server and try again.')
+    } catch (error) {
+      if (error.code === 'ECONNABORTED') {
+        setError('Upload timed out. Try a smaller file or retry.')
+      } else {
+        setError('Upload failed. Please check backend server and try again.')
+      }
     } finally {
       setIsUploading(false)
     }
@@ -65,7 +81,7 @@ function UploadBox({ onUploadSuccess }) {
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <h2 className="text-xl font-semibold text-slate-900">Upload Invoice</h2>
+      <h2 className="text-xl font-semibold text-slate-900">Upload Document</h2>
 
       <div
         className={`mt-4 rounded-lg border-2 border-dashed p-6 text-center transition ${
@@ -78,14 +94,14 @@ function UploadBox({ onUploadSuccess }) {
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
       >
-        <p className="text-slate-600">Drag and drop invoice image here</p>
+        <p className="text-slate-600">Drag and drop document (image or PDF) here</p>
         <p className="mt-1 text-sm text-slate-500">or use file picker below</p>
       </div>
 
       <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
         <input
           type="file"
-          accept="image/*"
+          accept="image/*,application/pdf"
           onChange={handleInputChange}
           className="block w-full text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-medium"
         />
