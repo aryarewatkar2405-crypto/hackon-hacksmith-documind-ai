@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { collection, getDocs, orderBy, query } from 'firebase/firestore'
+import { useLocation } from 'react-router-dom'
 import DocumentPreview from '../components/DocumentPreview'
 import SidebarNav from '../components/SidebarNav'
 import { db } from '../firebase'
@@ -15,6 +16,7 @@ const GROUP_LABELS = {
 }
 
 function DocumentsPage() {
+  const location = useLocation()
   const [documents, setDocuments] = useState([])
   const [selectedDocument, setSelectedDocument] = useState(null)
   const [expandedGroups, setExpandedGroups] = useState({})
@@ -29,6 +31,7 @@ function DocumentsPage() {
           return {
             id: docItem.id,
             document_name: data.filename || '-',
+            preview_url: data.preview_url || '',
             document_type: data.document_type || 'general_document',
             fields: data.fields || {},
             created_at: data.created_at,
@@ -45,6 +48,18 @@ function DocumentsPage() {
 
     fetchDocuments()
   }, [])
+
+  useEffect(() => {
+    if (!location.hash) {
+      return
+    }
+
+    const sectionId = location.hash.replace('#', '')
+    const section = document.getElementById(sectionId)
+    if (section) {
+      section.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }, [location.hash])
 
   const groupedDocuments = useMemo(() => {
     const groups = GROUP_ORDER.reduce((accumulator, key) => {
@@ -104,7 +119,7 @@ function DocumentsPage() {
             </header>
 
             <div className="grid gap-6 xl:grid-cols-5">
-              <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm xl:col-span-3">
+              <section id="folders-section" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm xl:col-span-3">
                 <h3 className="text-xl font-semibold text-slate-900">Folders</h3>
 
                 <div className="mt-4 space-y-3">

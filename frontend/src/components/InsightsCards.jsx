@@ -7,12 +7,10 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import { useNavigate } from 'react-router-dom'
 
 function InsightsCards({ documents }) {
-  const parseAmount = (value) => {
-    const numeric = Number(String(value ?? '').replace(/[^0-9.]/g, ''))
-    return Number.isFinite(numeric) ? numeric : 0
-  }
+  const navigate = useNavigate()
 
   const getCreatedAtTime = (doc) => {
     if (doc?.created_at?.toDate) {
@@ -52,33 +50,49 @@ function InsightsCards({ documents }) {
 
   const topEntity = Object.entries(entityCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || '-'
 
-  const totalAmount = documents.reduce((sum, doc) => {
-    return sum + parseAmount(doc?.fields?.amount)
-  }, 0)
-
   const latestDocument = [...documents].sort((a, b) => getCreatedAtTime(b) - getCreatedAtTime(a))[0]
 
   const cards = [
     { title: 'Total Documents', value: documents.length, icon: '📄' },
     { title: 'Most Common Type', value: topType.replaceAll('_', ' '), icon: '📊' },
     { title: 'Most Frequent Vendor', value: topEntity, icon: '🏢' },
-    { title: 'Total Amount Mentioned', value: `₹${totalAmount}`, icon: '💰' },
+    {
+      title: 'Uploaded Documents',
+      value: 'Open folders',
+      icon: '🗂️',
+      onClick: () => navigate('/documents#folders-section'),
+    },
     { title: 'Latest Uploaded Document', value: latestDocument?.document_name || '-', icon: '🕒' },
   ]
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 ease-in-out">
+    <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition duration-200 ease-in-out">
       <h2 className="text-xl font-semibold text-slate-900">Document Insights</h2>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {cards.map((card) => (
           <div
             key={card.title}
-            className="rounded-lg border border-slate-200 bg-slate-50 p-3 shadow-sm transition duration-200 ease-in-out hover:-translate-y-1 hover:shadow-lg"
+            className={`rounded-xl border border-slate-200 bg-slate-50 p-4 shadow-sm transition duration-200 ease-in-out hover:-translate-y-0.5 hover:shadow-md ${
+              card.onClick ? 'cursor-pointer' : ''
+            }`}
+            onClick={card.onClick}
+            role={card.onClick ? 'button' : undefined}
+            tabIndex={card.onClick ? 0 : undefined}
+            onKeyDown={(event) => {
+              if (!card.onClick) {
+                return
+              }
+
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault()
+                card.onClick()
+              }
+            }}
           >
             <div className="flex items-center justify-between">
               <p className="text-xs uppercase text-slate-500">{card.title}</p>
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-2xl shadow-sm">
+              <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white text-[1.6rem] shadow-sm">
                 {card.icon}
               </span>
             </div>
@@ -87,7 +101,7 @@ function InsightsCards({ documents }) {
         ))}
       </div>
 
-      <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-3 shadow-sm transition duration-200 ease-in-out">
+      <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4 shadow-sm transition duration-200 ease-in-out">
         <p className="text-sm font-medium text-slate-700">Document Type Distribution</p>
         <div className="mt-3 h-72 w-full">
           <ResponsiveContainer width="100%" height="100%">

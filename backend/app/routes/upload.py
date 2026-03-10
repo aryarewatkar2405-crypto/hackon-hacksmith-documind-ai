@@ -1,6 +1,7 @@
 from pathlib import Path
+from urllib.parse import quote
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, File, HTTPException, Request, UploadFile
 from PIL import UnidentifiedImageError
 
 from app.services.ocr_service import extract_text_from_file
@@ -16,7 +17,7 @@ UPLOADS_DIR = BACKEND_ROOT / "uploads"
 
 
 @router.post("/api/upload")
-async def upload_file(file: UploadFile = File(...)):
+async def upload_file(request: Request, file: UploadFile = File(...)):
     # Accept only supported image/PDF uploads for OCR processing.
     safe_filename = Path(file.filename).name
     extension = Path(safe_filename).suffix.lower().lstrip(".")
@@ -46,15 +47,20 @@ async def upload_file(file: UploadFile = File(...)):
     ocr_success = bool(extracted_text.strip())
     ocr_message = "OCR text extracted successfully" if ocr_success else "No OCR text extracted"
 
-    # Detect document type using OCR text only.
-    # This ensures classification is based on document content.
-    document_type = detect_document_type(extracted_text)
+    # Detect document type using OCR + filename + content type for stronger reliability.
+    document_type = detect_document_type(
+        extracted_text,
+        filename=safe_filename,
+        content_type=file.content_type or "",
+    )
 
     # Extract fields dynamically based on detected document type.
     fields = parse_document_fields(extracted_text, document_type)
+    preview_url = f"{str(request.base_url).rstrip('/')}/uploads/{quote(safe_filename)}"
 
     return {
         "filename": safe_filename,
+        "preview_url": preview_url,
         "document_type": document_type,
         "fields": fields,
         "extracted_text": extracted_text,

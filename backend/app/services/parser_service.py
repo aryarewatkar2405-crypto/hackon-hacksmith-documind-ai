@@ -19,18 +19,31 @@ def _extract_date(ocr_text: str) -> str:
     return date_match.group(1).strip() if date_match else ""
 
 
-def detect_document_type(ocr_text: str) -> str:
-    # Normalize OCR text to lowercase for consistent keyword detection.
-    normalized = ocr_text.lower()
+def _contains_any(text: str, keywords: list[str]) -> int:
+    return sum(1 for keyword in keywords if keyword in text)
+
+
+def detect_document_type(ocr_text: str, filename: str = "", content_type: str = "") -> str:
+    normalized_text = (ocr_text or "").lower()
+    normalized_filename = (filename or "").lower()
+    normalized_content_type = (content_type or "").lower()
+
+    scores = {
+        "invoice": 0,
+        "receipt": 0,
+        "contract": 0,
+        "id_card": 0,
+    }
 
     invoice_keywords = [
         "invoice",
-        "bill",
         "tax invoice",
+        "bill",
         "invoice no",
         "invoice number",
-        "total amount",
         "amount due",
+        "gst",
+        "subtotal",
     ]
     receipt_keywords = [
         "receipt",
@@ -38,42 +51,78 @@ def detect_document_type(ocr_text: str) -> str:
         "transaction",
         "paid",
         "thank you",
+        "cash",
+        "upi",
+        "pos",
     ]
     contract_keywords = [
         "agreement",
         "contract",
-        "terms",
-        "party",
+        "terms and conditions",
+        "party a",
+        "party b",
         "clause",
+        "effective date",
     ]
     id_keywords = [
         "identity",
-        "id",
-        "card",
+        "id card",
         "date of birth",
+        "dob",
         "id number",
         "government",
+        "passport",
+        "aadhaar",
+        "driving licence",
     ]
 
-    # Score each document type by counting how many of its keywords appear in OCR text.
-    invoice_score = sum(keyword in normalized for keyword in invoice_keywords)
-    receipt_score = sum(keyword in normalized for keyword in receipt_keywords)
-    contract_score = sum(keyword in normalized for keyword in contract_keywords)
-    id_score = sum(keyword in normalized for keyword in id_keywords)
+    # Base keyword scoring from OCR text.
+    scores["invoice"] += _contains_any(normalized_text, invoice_keywords) * 3
+    scores["receipt"] += _contains_any(normalized_text, receipt_keywords) * 3
+    scores["contract"] += _contains_any(normalized_text, contract_keywords) * 3
+    scores["id_card"] += _contains_any(normalized_text, id_keywords) * 3
 
-    scores = {
-        "invoice": invoice_score,
-        "receipt": receipt_score,
-        "contract": contract_score,
-        "id_card": id_score,
-    }
+    # Structural regex boosts for common formats.
+    if re.search(r"invoice\s*(?:no|number)?\s*[:#-]?\s*[a-z0-9-]+", normalized_text, flags=re.IGNORECASE):
+        scores["invoice"] += 6
+    if re.search(r"receipt\s*(?:no|number)?\s*[:#-]?\s*[a-z0-9-]+", normalized_text, flags=re.IGNORECASE):
+        scores["receipt"] += 6
+    if re.search(r"party\s*a|party\s*b|agreement\s+between", normalized_text, flags=re.IGNORECASE):
+        scores["contract"] += 6
+    if re.search(r"(?:date of birth|dob)\s*[:\-]", normalized_text, flags=re.IGNORECASE):
+        scores["id_card"] += 6
 
-    # If no keywords matched any category, fallback to general_document.
-    if max(scores.values()) == 0:
+    # Amount/date combo tends to indicate invoice/receipt documents.
+    if _extract_amount(ocr_text):
+        scores["invoice"] += 2
+        scores["receipt"] += 2
+    if _extract_date(ocr_text):
+        scores["invoice"] += 1
+        scores["receipt"] += 1
+        scores["contract"] += 1
+
+    # Filename fallback (important when OCR is weak/unavailable).
+    if any(keyword in normalized_filename for keyword in ["invoice", "bill", "proforma"]):
+        scores["invoice"] += 4
+    if any(keyword in normalized_filename for keyword in ["receipt", "payment", "txn", "transaction"]):
+        scores["receipt"] += 4
+    if any(keyword in normalized_filename for keyword in ["contract", "agreement", "terms"]):
+        scores["contract"] += 4
+    if any(keyword in normalized_filename for keyword in ["id", "aadhaar", "passport", "license", "licence"]):
+        scores["id_card"] += 4
+
+    # Small bias for likely text-heavy contracts in PDF form.
+    if normalized_content_type == "application/pdf" and len(normalized_text) > 500:
+        scores["contract"] += 1
+
+    best_type = max(scores, key=scores.get)
+    best_score = scores[best_type]
+
+    # Use a confidence floor to avoid random false positives.
+    if best_score < 3:
         return "general_document"
 
-    # Otherwise return the type with the highest keyword score.
-    return max(scores, key=scores.get)
+    return best_type
 
 
 def parse_document_fields(ocr_text: str, document_type: str) -> dict:
@@ -143,5 +192,7 @@ def parse_document_fields(ocr_text: str, document_type: str) -> dict:
         }
 
     return {
+        "amount": _extract_amount(ocr_text),
+        "date": _extract_date(ocr_text),
         "summary": ocr_text[:200].strip(),
     }

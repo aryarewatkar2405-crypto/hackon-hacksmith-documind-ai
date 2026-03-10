@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { addDoc, collection, deleteDoc, doc as firestoreDoc, getDocs, orderBy, query } from 'firebase/firestore'
+import { useLocation } from 'react-router-dom'
 import DocumentPreview from '../components/DocumentPreview'
 import InsightsCards from '../components/InsightsCards'
 import QuestionPanel from '../components/QuestionPanel'
@@ -8,6 +9,7 @@ import UploadBox from '../components/UploadBox'
 import { db } from '../firebase'
 
 function Dashboard() {
+  const location = useLocation()
   const [documents, setDocuments] = useState([])
   const [selectedDocument, setSelectedDocument] = useState(null)
 
@@ -56,6 +58,7 @@ function Dashboard() {
           return {
             id: doc.id,
             document_name: data.filename || '-',
+            preview_url: data.preview_url || '',
             document_type: data.document_type || 'general_document',
             fields: data.fields || {},
             created_at: data.created_at,
@@ -74,10 +77,23 @@ function Dashboard() {
     fetchDocuments()
   }, [])
 
+  useEffect(() => {
+    if (!location.hash) {
+      return
+    }
+
+    const sectionId = location.hash.replace('#', '')
+    const section = document.getElementById(sectionId)
+    if (section) {
+      section.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }, [location.hash])
+
   const handleUploadSuccess = (uploadResult) => {
     // Build Firestore payload with generic structure for multiple document types.
     const firestorePayload = {
       filename: uploadResult.filename || '-',
+      preview_url: uploadResult.preview_url || '',
       document_type: uploadResult.document_type || 'general_document',
       fields: uploadResult.fields || {},
       created_at: new Date(),
@@ -88,6 +104,7 @@ function Dashboard() {
     const nextDocument = {
       id: tempId,
       document_name: firestorePayload.filename,
+      preview_url: firestorePayload.preview_url,
       document_type: firestorePayload.document_type,
       fields: firestorePayload.fields,
       created_at: firestorePayload.created_at,
@@ -139,13 +156,13 @@ function Dashboard() {
       <div className="flex min-h-screen">
         <SidebarNav />
 
-        <section className="flex-1 p-4 md:p-6 lg:p-8">
-          <div className="mx-auto max-w-7xl space-y-6">
-            <header className="rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 p-5 shadow-sm transition duration-200 ease-in-out md:p-6">
+        <section className="flex-1 p-5 md:p-7 lg:p-9">
+          <div className="mx-auto max-w-7xl space-y-7">
+            <header id="dashboard-section" className="rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 p-6 shadow-sm transition duration-200 ease-in-out md:p-7">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <h2 className="text-2xl font-bold text-white md:text-3xl">DocuMind AI</h2>
-                  <p className="mt-1 text-sm text-indigo-100 md:text-base">
+                  <h2 className="text-3xl font-bold text-white">DocuMind AI</h2>
+                  <p className="mt-1.5 text-sm font-medium text-indigo-100 md:text-base">
                     AI-powered document intelligence platform
                   </p>
                 </div>
@@ -171,12 +188,14 @@ function Dashboard() {
               <UploadBox onUploadSuccess={handleUploadSuccess} />
             </section>
 
-            <InsightsCards documents={documents} />
+            <section id="analytics-section">
+              <InsightsCards documents={documents} />
+            </section>
 
-            <QuestionPanel documents={documents} />
+            <QuestionPanel documents={documents} onSelectDocument={setSelectedDocument} />
 
             <div className="grid gap-6 xl:grid-cols-5">
-              <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 ease-in-out xl:col-span-3">
+              <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition duration-200 ease-in-out xl:col-span-3">
                 <h3 className="text-xl font-semibold text-slate-900">Extracted Documents</h3>
 
                 <div className="mt-4 overflow-hidden rounded-lg border border-slate-200">
@@ -198,18 +217,17 @@ function Dashboard() {
                             </td>
                           </tr>
                         ) : (
-                          documents.map((doc, index) => (
-                            (() => {
-                              const typeBadge = typeBadgeConfig(doc.document_type)
+                          documents.map((doc, index) => {
+                            const typeBadge = typeBadgeConfig(doc.document_type)
 
-                              return (
-                                <tr
-                                  key={`${doc.document_name}-${index}`}
-                                  className={`cursor-pointer border-t border-slate-100 transition duration-200 ease-in-out hover:bg-gray-50 ${
-                                    selectedDocument?.document_name === doc.document_name ? 'bg-indigo-50/60' : ''
-                                  }`}
-                                  onClick={() => setSelectedDocument(doc)}
-                                >
+                            return (
+                              <tr
+                                key={`${doc.document_name}-${index}`}
+                                className={`cursor-pointer border-t border-slate-100 transition duration-200 ease-in-out hover:bg-gray-50 ${
+                                  selectedDocument?.document_name === doc.document_name ? 'bg-indigo-50/60' : ''
+                                }`}
+                                onClick={() => setSelectedDocument(doc)}
+                              >
                               <td className="px-4 py-3 font-medium text-slate-800">{doc.document_name}</td>
                               <td className="px-4 py-3">
                                 <span
@@ -229,10 +247,9 @@ function Dashboard() {
                                   Delete
                                 </button>
                               </td>
-                                </tr>
-                              )
-                            })()
-                          ))
+                              </tr>
+                            )
+                          })
                         )}
                       </tbody>
                     </table>

@@ -80,11 +80,11 @@ function UploadBox({ onUploadSuccess }) {
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 ease-in-out hover:shadow-md">
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition duration-200 ease-in-out hover:shadow-md">
       <h2 className="text-xl font-semibold text-slate-900">Upload Documents</h2>
 
       <div
-        className={`mt-4 cursor-pointer rounded-xl border-2 border-dashed p-8 text-center transition duration-200 ease-in-out ${
+        className={`mt-5 cursor-pointer rounded-xl border-2 border-dashed p-9 text-center transition duration-200 ease-in-out ${
           isDragging
             ? 'border-indigo-500 bg-indigo-50'
             : 'border-slate-300 bg-slate-50 hover:border-indigo-400 hover:bg-indigo-50'
@@ -104,7 +104,7 @@ function UploadBox({ onUploadSuccess }) {
         <p className="mt-1 text-sm text-slate-500">Supported formats: PDF, JPG, JPEG, PNG</p>
       </div>
 
-      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
         <input
           id="documind-file-input"
           type="file"
