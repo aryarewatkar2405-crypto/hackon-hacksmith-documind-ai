@@ -67,22 +67,27 @@ function InsightsCards({ documents }) {
   ]
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 ease-in-out">
       <h2 className="text-xl font-semibold text-slate-900">Document Insights</h2>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {cards.map((card) => (
-          <div key={card.title} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+          <div
+            key={card.title}
+            className="rounded-lg border border-slate-200 bg-slate-50 p-3 shadow-sm transition duration-200 ease-in-out hover:-translate-y-1 hover:shadow-lg"
+          >
             <div className="flex items-center justify-between">
               <p className="text-xs uppercase text-slate-500">{card.title}</p>
-              <span className="text-lg">{card.icon}</span>
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-2xl shadow-sm">
+                {card.icon}
+              </span>
             </div>
             <p className="mt-2 truncate text-lg font-semibold text-slate-900">{card.value}</p>
           </div>
         ))}
       </div>
 
-      <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-3">
+      <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-3 shadow-sm transition duration-200 ease-in-out">
         <p className="text-sm font-medium text-slate-700">Document Type Distribution</p>
         <div className="mt-3 h-72 w-full">
           <ResponsiveContainer width="100%" height="100%">

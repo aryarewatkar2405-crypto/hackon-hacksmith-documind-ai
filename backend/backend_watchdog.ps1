@@ -7,6 +7,14 @@ $watchdogLog = Join-Path $logDir "backend_watchdog.log"
 
 New-Item -ItemType Directory -Path $logDir -Force | Out-Null
 
+$pythonCmd = Get-Command python -ErrorAction SilentlyContinue
+$pyLauncher = Get-Command py -ErrorAction SilentlyContinue
+
+if (-not $pythonCmd -and -not $pyLauncher) {
+    Add-Content -Path $watchdogLog -Value "[$(Get-Date -Format o)] No Python executable found in PATH. Watchdog exiting."
+    exit 1
+}
+
 $restartCount = 0
 
 while ($true) {
@@ -20,7 +28,11 @@ while ($true) {
 
     Push-Location $backendDir
     try {
-        python -m uvicorn main:app --app-dir "$backendDir" --host 127.0.0.1 --port 8000 1>> $stdoutLog 2>> $stderrLog
+        if ($pythonCmd) {
+            & python -m uvicorn main:app --app-dir "$backendDir" --host 127.0.0.1 --port 8000 1>> $stdoutLog 2>> $stderrLog
+        } else {
+            & py -3 -m uvicorn main:app --app-dir "$backendDir" --host 127.0.0.1 --port 8000 1>> $stdoutLog 2>> $stderrLog
+        }
         $exitCode = $LASTEXITCODE
     } finally {
         Pop-Location

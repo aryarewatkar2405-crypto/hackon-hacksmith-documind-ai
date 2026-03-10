@@ -29,10 +29,20 @@ hackon-documind-ai/
 ```bash
 cd frontend
 npm install
-npm run dev
+npm run dev -- --host 127.0.0.1 --port 5173 --strictPort
 ```
 
-Frontend runs at `http://localhost:5173`.
+Frontend runs at `http://127.0.0.1:5173`.
+
+### Windows stable frontend start (recommended)
+
+From project root:
+
+```powershell
+.\start_frontend.ps1
+```
+
+This script starts the frontend from the correct folder, uses a fixed port, and stops stale Vite processes for this project.
 
 ## Run Backend
 
@@ -67,6 +77,30 @@ Or run with PowerShell:
 
 ```powershell
 .\start_app.ps1
+```
+
+`start_app.ps1` now waits for backend health, launches frontend with stable settings, and opens the browser only after port readiness checks.
+
+### One-click stop (frontend + backend)
+
+From project root:
+
+```powershell
+.\stop_app.ps1
+```
+
+Or double-click:
+
+```text
+stop_app.bat
+```
+
+### Stop frontend only
+
+From project root:
+
+```powershell
+.\stop_frontend.ps1
 ```
 
 ### Windows stop backend (one command)

@@ -80,13 +80,16 @@ function UploadBox({ onUploadSuccess }) {
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <h2 className="text-xl font-semibold text-slate-900">Upload Document</h2>
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 ease-in-out hover:shadow-md">
+      <h2 className="text-xl font-semibold text-slate-900">Upload Documents</h2>
 
       <div
-        className={`mt-4 rounded-lg border-2 border-dashed p-6 text-center transition ${
-          isDragging ? 'border-blue-500 bg-blue-50' : 'border-slate-300 bg-slate-50'
+        className={`mt-4 cursor-pointer rounded-xl border-2 border-dashed p-8 text-center transition duration-200 ease-in-out ${
+          isDragging
+            ? 'border-indigo-500 bg-indigo-50'
+            : 'border-slate-300 bg-slate-50 hover:border-indigo-400 hover:bg-indigo-50'
         }`}
+        onClick={() => document.getElementById('documind-file-input')?.click()}
         onDragOver={(event) => {
           event.preventDefault()
           setIsDragging(true)
@@ -94,12 +97,16 @@ function UploadBox({ onUploadSuccess }) {
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
       >
-        <p className="text-slate-600">Drag and drop document (image or PDF) here</p>
-        <p className="mt-1 text-sm text-slate-500">or use file picker below</p>
+        <p className="text-5xl">⭳</p>
+        <p className="mt-3 text-base font-medium text-slate-700">
+          Drag and drop documents or click to upload
+        </p>
+        <p className="mt-1 text-sm text-slate-500">Supported formats: PDF, JPG, JPEG, PNG</p>
       </div>
 
       <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
         <input
+          id="documind-file-input"
           type="file"
           accept="image/*,application/pdf"
           onChange={handleInputChange}
@@ -110,11 +117,19 @@ function UploadBox({ onUploadSuccess }) {
           type="button"
           onClick={handleUpload}
           disabled={isUploading}
-          className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition duration-200 ease-in-out hover:-translate-y-0.5 hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-400"
         >
+          {isUploading && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/60 border-t-white" />}
           {isUploading ? 'Uploading...' : 'Upload'}
         </button>
       </div>
+
+      {isUploading && (
+        <div className="mt-3 inline-flex items-center gap-2 rounded-md bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700">
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-indigo-300 border-t-indigo-600" />
+          <span>Processing document...</span>
+        </div>
+      )}
 
       {selectedFile && (
         <p className="mt-3 text-sm text-slate-600">Selected: {selectedFile.name}</p>
