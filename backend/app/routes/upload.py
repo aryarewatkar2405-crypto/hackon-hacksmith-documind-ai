@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
+from PIL import UnidentifiedImageError
 
 from app.services.ocr_service import extract_text_from_file
 from app.services.parser_service import detect_document_type, parse_document_fields
@@ -32,10 +33,16 @@ async def upload_file(file: UploadFile = File(...)):
     # Save the uploaded file to backend/uploads with a safe local filename.
     destination_path = UPLOADS_DIR / safe_filename
     file_bytes = await file.read()
+    if not file_bytes:
+        raise HTTPException(status_code=400, detail="Uploaded file is empty")
+
     destination_path.write_bytes(file_bytes)
 
     # Run OCR on saved image/PDF and return combined extracted text.
-    extracted_text = extract_text_from_file(str(destination_path))
+    try:
+        extracted_text = extract_text_from_file(str(destination_path))
+    except (UnidentifiedImageError, OSError, ValueError):
+        raise HTTPException(status_code=400, detail="Uploaded file is unreadable or corrupted")
     ocr_success = bool(extracted_text.strip())
     ocr_message = "OCR text extracted successfully" if ocr_success else "No OCR text extracted"
 

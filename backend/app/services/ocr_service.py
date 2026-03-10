@@ -1,4 +1,4 @@
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 from pdf2image import convert_from_path
 import pytesseract
 
@@ -17,8 +17,11 @@ def extract_text_from_file(file_path: str) -> str:
 
     # Handle image files directly with OCR.
     if file_suffix in {"jpg", "jpeg", "png"}:
-        image = Image.open(file_path)
-        return _extract_text_from_single_image(image)
+        try:
+            image = Image.open(file_path)
+            return _extract_text_from_single_image(image)
+        except (UnidentifiedImageError, OSError, ValueError):
+            return ""
 
     # Handle PDF files by converting each page to an image and OCR-ing each page.
     if file_suffix == "pdf":
