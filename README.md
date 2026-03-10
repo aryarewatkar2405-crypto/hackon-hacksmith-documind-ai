@@ -52,6 +52,20 @@ From project root:
 .\start_backend.ps1
 ```
 
+### One-click start (frontend + backend)
+
+Double-click this file from project root:
+
+```text
+start_app.bat
+```
+
+Or run with PowerShell:
+
+```powershell
+.\start_app.ps1
+```
+
 ### Windows stop backend (one command)
 
 From project root:
