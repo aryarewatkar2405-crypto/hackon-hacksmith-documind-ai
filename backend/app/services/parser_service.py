@@ -20,29 +20,60 @@ def _extract_date(ocr_text: str) -> str:
 
 
 def detect_document_type(ocr_text: str) -> str:
+    # Normalize OCR text to lowercase for consistent keyword detection.
     normalized = ocr_text.lower()
 
-    # Detect invoice-like documents by invoice-specific keywords.
-    if any(keyword in normalized for keyword in ["invoice", "invoice no", "invoice number"]):
-        return "invoice"
+    invoice_keywords = [
+        "invoice",
+        "bill",
+        "tax invoice",
+        "invoice no",
+        "invoice number",
+        "total amount",
+        "amount due",
+    ]
+    receipt_keywords = [
+        "receipt",
+        "payment received",
+        "transaction",
+        "paid",
+        "thank you",
+    ]
+    contract_keywords = [
+        "agreement",
+        "contract",
+        "terms",
+        "party",
+        "clause",
+    ]
+    id_keywords = [
+        "identity",
+        "id",
+        "card",
+        "date of birth",
+        "id number",
+        "government",
+    ]
 
-    # Detect receipts by common receipt terms.
-    if any(keyword in normalized for keyword in ["receipt", "cash memo", "bill"]):
-        return "receipt"
+    # Score each document type by counting how many of its keywords appear in OCR text.
+    invoice_score = sum(keyword in normalized for keyword in invoice_keywords)
+    receipt_score = sum(keyword in normalized for keyword in receipt_keywords)
+    contract_score = sum(keyword in normalized for keyword in contract_keywords)
+    id_score = sum(keyword in normalized for keyword in id_keywords)
 
-    # Detect ID cards by broad identity keywords (Government / ID / Card).
-    if any(
-        keyword in normalized
-        for keyword in ["government", "id", "card", "id card", "date of birth", "dob", "id no", "id number"]
-    ):
-        return "id_card"
+    scores = {
+        "invoice": invoice_score,
+        "receipt": receipt_score,
+        "contract": contract_score,
+        "id_card": id_score,
+    }
 
-    # Detect contracts by agreement/party language.
-    if any(keyword in normalized for keyword in ["agreement", "contract", "party a", "party b"]):
-        return "contract"
+    # If no keywords matched any category, fallback to general_document.
+    if max(scores.values()) == 0:
+        return "general_document"
 
-    # Fallback when no strong keyword match is found.
-    return "general_document"
+    # Otherwise return the type with the highest keyword score.
+    return max(scores, key=scores.get)
 
 
 def parse_document_fields(ocr_text: str, document_type: str) -> dict:

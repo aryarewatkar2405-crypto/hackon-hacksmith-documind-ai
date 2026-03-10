@@ -1,15 +1,14 @@
 import { useEffect, useState } from 'react'
 import { addDoc, collection, getDocs, orderBy, query } from 'firebase/firestore'
-import DocumentAnalytics from '../components/DocumentAnalytics'
 import DocumentPreview from '../components/DocumentPreview'
-import InsightsPanel from '../components/InsightsPanel'
+import InsightsCards from '../components/InsightsCards'
+import QuestionPanel from '../components/QuestionPanel'
 import UploadBox from '../components/UploadBox'
 import { db } from '../firebase'
 
 function Dashboard() {
   const [documents, setDocuments] = useState([])
   const [selectedDocument, setSelectedDocument] = useState(null)
-  const [analyticsRefreshSignal, setAnalyticsRefreshSignal] = useState(0)
 
   const formatFields = (fields = {}) => {
     const entries = Object.entries(fields).filter(([, value]) => value)
@@ -77,8 +76,6 @@ function Dashboard() {
       // Ignore persistence failure and keep local dashboard state.
     })
 
-    // Trigger analytics refetch so insights update after every new upload.
-    setAnalyticsRefreshSignal((prev) => prev + 1)
   }
 
   return (
@@ -134,11 +131,11 @@ function Dashboard() {
           )}
         </section>
 
-        <DocumentAnalytics refreshSignal={analyticsRefreshSignal} />
+        <InsightsCards documents={documents} />
+
+        <QuestionPanel documents={documents} />
 
         <DocumentPreview document={selectedDocument} />
-
-        <InsightsPanel documents={documents} />
       </div>
     </main>
   )

@@ -36,8 +36,11 @@ async def upload_file(file: UploadFile = File(...)):
 
     # Run OCR on saved image/PDF and return combined extracted text.
     extracted_text = extract_text_from_file(str(destination_path))
+    ocr_success = bool(extracted_text.strip())
+    ocr_message = "OCR text extracted successfully" if ocr_success else "No OCR text extracted"
 
-    # Detect document type from OCR text using simple keyword matching.
+    # Detect document type using OCR text only.
+    # This ensures classification is based on document content.
     document_type = detect_document_type(extracted_text)
 
     # Extract fields dynamically based on detected document type.
@@ -48,4 +51,6 @@ async def upload_file(file: UploadFile = File(...)):
         "document_type": document_type,
         "fields": fields,
         "extracted_text": extracted_text,
+        "ocr_success": ocr_success,
+        "ocr_message": ocr_message,
     }
